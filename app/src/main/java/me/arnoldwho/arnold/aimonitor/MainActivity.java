@@ -53,6 +53,8 @@ public class MainActivity extends ActivityMiniRecog {
     private boolean fanStatus = false;
     private boolean alarmStatus = false;
     private String recognizeResult = "";
+    private String ip;
+    private int port;
 
     private EventManager asr;
 
@@ -80,8 +82,11 @@ public class MainActivity extends ActivityMiniRecog {
         ButterKnife.bind(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        new Thread(connect).start();
+        SharedPreferences pref = getSharedPreferences("serverinfo", MODE_PRIVATE);
+        ip = pref.getString("serverip", "");
+        port = Integer.parseInt(pref.getString("serverport", ""));
         initPermission();
+        new Thread(connect).start();
         asr = EventManagerFactory.create(this, "asr");
         EventListener myListener = new EventListener() {
             @Override
@@ -157,10 +162,7 @@ public class MainActivity extends ActivityMiniRecog {
         @Override
         public void run() {
             try {
-                SharedPreferences pref = getSharedPreferences("serverinfo", MODE_PRIVATE);
-                String ip = pref.getString("serverip", "");
-                String port = pref.getString("serverport", "");
-                socket = new Socket(ip, Integer.parseInt(port));
+                socket = new Socket(ip, port);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -181,6 +183,7 @@ public class MainActivity extends ActivityMiniRecog {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
+            startActivity(new Intent(MainActivity.this, ServerSActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -289,6 +292,11 @@ public class MainActivity extends ActivityMiniRecog {
             unloadOfflineEngine();
         }
         asr.unregisterListener(this);
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void initPermission() {
