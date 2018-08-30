@@ -86,7 +86,7 @@ public class MainActivity extends ActivityMiniRecog {
         ip = pref.getString("serverip", "");
         port = Integer.parseInt(pref.getString("serverport", ""));
         initPermission();
-        new Thread(connect).start();
+        //new Thread(connect).start();
         asr = EventManagerFactory.create(this, "asr");
         EventListener myListener = new EventListener() {
             @Override
@@ -104,35 +104,34 @@ public class MainActivity extends ActivityMiniRecog {
                 }
                 switch (recognizeResult) {
                     case "开灯":
-                        lightStatus = hardwareControl.lightOn(_lightSwitch);
+                        lightStatus = hardwareControl.lightOn(_lightSwitch, socket);
                         break;
                     case "关灯":
-                        lightStatus = hardwareControl.lightOff(_lightSwitch);
+                        lightStatus = hardwareControl.lightOff(_lightSwitch, socket);
                         break;
                     case "开风扇":
-                        fanStatus = hardwareControl.fanOn(_fanSwitch);
+                        fanStatus = hardwareControl.fanOn(_fanSwitch, socket);
                         break;
                     case "关风扇":
-                        fanStatus = hardwareControl.fanOff(_fanSwitch);
+                        fanStatus = hardwareControl.fanOff(_fanSwitch, socket);
                         break;
                     case "开蜂鸣器":
-                        alarmStatus = hardwareControl.alarmOn(_alarmSwitch);
+                        alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
                         break;
                     case "关蜂鸣器":
-                        alarmStatus = hardwareControl.alarmOff(_alarmSwitch);
+                        alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
                         break;
                     case "关闭全部":
-                        lightStatus = hardwareControl.lightOff(_lightSwitch);
-                        fanStatus = hardwareControl.fanOff(_fanSwitch);
-                        alarmStatus = hardwareControl.alarmOff(_alarmSwitch);
+                        lightStatus = hardwareControl.lightOff(_lightSwitch, socket);
+                        fanStatus = hardwareControl.fanOff(_fanSwitch, socket);
+                        alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
                         break;
                     case "开启全部":
-                        lightStatus = hardwareControl.lightOn(_lightSwitch);
-                        fanStatus = hardwareControl.fanOn(_fanSwitch);
-                        alarmStatus = hardwareControl.alarmOn(_alarmSwitch);
+                        lightStatus = hardwareControl.lightOn(_lightSwitch, socket);
+                        fanStatus = hardwareControl.fanOn(_fanSwitch, socket);
+                        alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
                         break;
                 }
-
             }
         };
         asr.registerListener(myListener);
@@ -144,7 +143,7 @@ public class MainActivity extends ActivityMiniRecog {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        testT();
+                        //testT();
                         startRecognize();
                         break;
                     case MotionEvent.ACTION_UP:
@@ -255,25 +254,29 @@ public class MainActivity extends ActivityMiniRecog {
                 break;
             case R.id.lightSwitch:
                 if (lightStatus) {
-                    lightStatus = hardwareControl.lightOff(_lightSwitch);
+                    lightStatus = hardwareControl.lightOff(_lightSwitch, socket);
                 } else {
-                    lightStatus = hardwareControl.lightOn(_lightSwitch);
+                    lightStatus = hardwareControl.lightOn(_lightSwitch, socket);
                 }
                 break;
             case R.id.fanSwitch:
                 if (fanStatus) {
-                    fanStatus = hardwareControl.fanOff(_fanSwitch);
+                    fanStatus = hardwareControl.fanOff(_fanSwitch, socket);
                 } else {
-                    fanStatus = hardwareControl.fanOn(_fanSwitch);
+                    fanStatus = hardwareControl.fanOn(_fanSwitch, socket);
                 }
                 break;
             case R.id.alarmSwitch:
                 if (alarmStatus) {
-                    alarmStatus = hardwareControl.alarmOff(_alarmSwitch);
+                    alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
                 } else {
-                    alarmStatus = hardwareControl.alarmOn(_alarmSwitch);
+                    alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
                 }
                 break;
+                default:
+                    break;
+
+
         }
     }
 
@@ -282,6 +285,19 @@ public class MainActivity extends ActivityMiniRecog {
         super.onPause();
         asr.send(SpeechConstant.ASR_CANCEL, "{}", null, 0, 0);
         Log.i("ActivityMiniRecog", "On pause");
+        try {
+            socket.close();
+            Toast.makeText(this, "colse socket!", Toast.LENGTH_LONG).show();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        new Thread(connect).start();
+        Toast.makeText(this, "reconnected socket!", Toast.LENGTH_LONG).show();
     }
 
     @Override
@@ -294,6 +310,7 @@ public class MainActivity extends ActivityMiniRecog {
         asr.unregisterListener(this);
         try {
             socket.close();
+            Toast.makeText(this, "colse socket!", Toast.LENGTH_LONG).show();
         } catch (IOException e) {
             e.printStackTrace();
         }
