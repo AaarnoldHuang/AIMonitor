@@ -86,50 +86,59 @@ public class MainActivity extends ActivityMiniRecog {
         ip = pref.getString("serverip", "");
         port = Integer.parseInt(pref.getString("serverport", ""));
         initPermission();
-        //new Thread(connect).start();
         asr = EventManagerFactory.create(this, "asr");
         EventListener myListener = new EventListener() {
             @Override
             public void onEvent(String name, String params, byte[] data, int offset, int length) {
-                if (params != null && !params.isEmpty()) {
-                    try {
-                        JSONObject jsonObject = new JSONObject(params);
-                        if (jsonObject.optString("result_type").equals("final_result")) {
-                            _resultText.setText(jsonObject.optString("best_result"));
-                            recognizeResult = jsonObject.optString("best_result");
+                if (name.equals("asr.partial")) {
+                    if (params != null && !params.isEmpty()) {
+                        try {
+                            JSONObject jsonObject = new JSONObject(params);
+                            if (jsonObject.optString("result_type").equals("final_result")) {
+                                _resultText.setText(jsonObject.optString("best_result"));
+                                recognizeResult = jsonObject.optString("best_result");
+                            }
+                        } catch (JSONException e) {
+                            e.printStackTrace();
                         }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
                     }
                 }
                 switch (recognizeResult) {
                     case "开灯":
                         lightStatus = hardwareControl.lightOn(_lightSwitch, socket);
+                        recognizeResult = "";
                         break;
                     case "关灯":
                         lightStatus = hardwareControl.lightOff(_lightSwitch, socket);
+                        recognizeResult = "";
                         break;
                     case "开风扇":
                         fanStatus = hardwareControl.fanOn(_fanSwitch, socket);
+                        recognizeResult = "";
                         break;
                     case "关风扇":
                         fanStatus = hardwareControl.fanOff(_fanSwitch, socket);
+                        recognizeResult = "";
                         break;
                     case "开蜂鸣器":
                         alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
+                        recognizeResult = "";
                         break;
                     case "关蜂鸣器":
                         alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
+                        recognizeResult = "";
                         break;
                     case "关闭全部":
                         lightStatus = hardwareControl.lightOff(_lightSwitch, socket);
                         fanStatus = hardwareControl.fanOff(_fanSwitch, socket);
                         alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
+                        recognizeResult = "";
                         break;
-                    case "开启全部":
+                    case "打开全部":
                         lightStatus = hardwareControl.lightOn(_lightSwitch, socket);
                         fanStatus = hardwareControl.fanOn(_fanSwitch, socket);
                         alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
+                        recognizeResult = "";
                         break;
                 }
             }
@@ -244,13 +253,11 @@ public class MainActivity extends ActivityMiniRecog {
     }
 
 
-    @OnClick({R.id.fab, R.id.startReco, R.id.lightSwitch, R.id.fanSwitch, R.id.alarmSwitch})
+    @OnClick({R.id.fab, R.id.lightSwitch, R.id.fanSwitch, R.id.alarmSwitch})
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.fab:
                 test();
-                break;
-            case R.id.startReco:
                 break;
             case R.id.lightSwitch:
                 if (lightStatus) {
