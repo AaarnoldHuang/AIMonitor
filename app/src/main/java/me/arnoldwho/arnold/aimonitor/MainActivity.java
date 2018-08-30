@@ -1,6 +1,8 @@
 package me.arnoldwho.arnold.aimonitor;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -155,7 +157,10 @@ public class MainActivity extends ActivityMiniRecog {
         @Override
         public void run() {
             try {
-                socket = new Socket("120.79.207.50", 3000);
+                SharedPreferences pref = getSharedPreferences("serverinfo", MODE_PRIVATE);
+                String ip = pref.getString("serverip", "");
+                String port = pref.getString("serverport", "");
+                socket = new Socket(ip, Integer.parseInt(port));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -305,6 +310,5 @@ public class MainActivity extends ActivityMiniRecog {
         if (!toApplyList.isEmpty()) {
             ActivityCompat.requestPermissions(this, toApplyList.toArray(tmpList), 123);
         }
-
     }
 }
