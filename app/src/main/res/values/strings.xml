@@ -5,4 +5,5 @@
     <string name="IPAddr">Server IP Address</string>
     <string name="Port"> Port</string>
     <string name="ConnectBtn">Connect</string>
+    <string name="StartBut">Press an hold to speak</string>
 </resources>

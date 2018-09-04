@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -74,14 +75,25 @@ public class MainActivity extends ActivityMiniRecog {
     ImageView _fanSwitch;
     @BindView(R.id.alarmSwitch)
     ImageView _alarmSwitch;
+    @BindView(R.id.video)
+    ImageView _video;
+    @BindView(R.id.hum)
+    Button _humButton;
+    @BindView(R.id.tem)
+    Button _temButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            this.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        }
         ButterKnife.bind(this);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        _video.setImageResource(R.drawable.ic_temp);
+
         SharedPreferences pref = getSharedPreferences("serverinfo", MODE_PRIVATE);
         ip = pref.getString("serverip", "");
         port = Integer.parseInt(pref.getString("serverport", ""));
@@ -140,6 +152,10 @@ public class MainActivity extends ActivityMiniRecog {
                         alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
                         recognizeResult = "";
                         break;
+                    case "现在温度多少":
+                        hardwareControl.getTemInfo(_resultText, socket);
+                    case "现在湿度多少":
+                        hardwareControl.getHumInfo(_resultText, socket);
                 }
             }
         };
@@ -253,7 +269,7 @@ public class MainActivity extends ActivityMiniRecog {
     }
 
 
-    @OnClick({R.id.fab, R.id.lightSwitch, R.id.fanSwitch, R.id.alarmSwitch})
+    @OnClick({R.id.fab, R.id.lightSwitch, R.id.fanSwitch, R.id.alarmSwitch, R.id.startReco, R.id.tem, R.id.hum})
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.fab:
@@ -278,7 +294,14 @@ public class MainActivity extends ActivityMiniRecog {
                     alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
                 } else {
                     alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
+                    //hardwareControl.getInfo(_resultText, socket);
                 }
+                break;
+            case R.id.hum:
+                    hardwareControl.getHumInfo(_resultText, socket);
+                break;
+            case R.id.tem:
+                hardwareControl.getTemInfo(_resultText, socket);
                 break;
                 default:
                     break;
@@ -292,12 +315,17 @@ public class MainActivity extends ActivityMiniRecog {
         super.onPause();
         asr.send(SpeechConstant.ASR_CANCEL, "{}", null, 0, 0);
         Log.i("ActivityMiniRecog", "On pause");
-        try {
-            socket.close();
-            Toast.makeText(this, "colse socket!", Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mySocket.getResponse("byebye.", socket);
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     @Override
@@ -315,12 +343,17 @@ public class MainActivity extends ActivityMiniRecog {
             unloadOfflineEngine();
         }
         asr.unregisterListener(this);
-        try {
-            socket.close();
-            Toast.makeText(this, "colse socket!", Toast.LENGTH_LONG).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                mySocket.getResponse("byebye.", socket);
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private void initPermission() {
