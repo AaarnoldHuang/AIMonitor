@@ -16,7 +16,7 @@ public class HardwareControl {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                response = mySocket.getResponse("/superpowerlighton", socket);
+                response = mySocket.getResponse("LIGHT_ON", socket);
             }
         }).start();
         return true;
@@ -27,7 +27,7 @@ public class HardwareControl {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                response = mySocket.getResponse("/superpowerlightoff", socket);
+                response = mySocket.getResponse("LIGHT_OFF", socket);
             }
         }).start();
         return false;
@@ -38,7 +38,7 @@ public class HardwareControl {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                response = mySocket.getResponse("/superpowerfanon", socket);
+                response = mySocket.getResponse("FAN_ON", socket);
             }
         }).start();
         return true;
@@ -49,7 +49,7 @@ public class HardwareControl {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                response = mySocket.getResponse("/superpowerfanoff", socket);
+                response = mySocket.getResponse("FAN_OFF", socket);
             }
         }).start();
         return false;
@@ -60,7 +60,7 @@ public class HardwareControl {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                response = mySocket.getResponse("/superpoweralarmon", socket);
+                response = mySocket.getResponse("BUZZ_ON", socket);
             }
         }).start();
         return true;
@@ -71,7 +71,7 @@ public class HardwareControl {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                response = mySocket.getResponse("/superpoweralarmoff", socket);
+                response = mySocket.getResponse("BUZZ_OFF", socket);
             }
         }).start();
         return false;

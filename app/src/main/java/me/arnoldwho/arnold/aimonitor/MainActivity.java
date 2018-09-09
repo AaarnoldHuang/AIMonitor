@@ -4,6 +4,8 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,7 +36,11 @@ import com.baidu.speech.asr.SpeechConstant;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -46,7 +52,7 @@ import butterknife.OnClick;
 
 public class MainActivity extends ActivityMiniRecog {
 
-    public Socket socket;
+    public Socket socket, videosocket;
     MySocket mySocket = new MySocket();
     final HardwareControl hardwareControl = new HardwareControl();
     protected boolean enableOffline = false;
@@ -56,6 +62,8 @@ public class MainActivity extends ActivityMiniRecog {
     private String recognizeResult = "";
     private String ip;
     private int port;
+    Bitmap bitmap;
+
 
     private EventManager asr;
 
@@ -95,10 +103,13 @@ public class MainActivity extends ActivityMiniRecog {
         _video.setImageResource(R.drawable.ic_temp);
 
         SharedPreferences pref = getSharedPreferences("serverinfo", MODE_PRIVATE);
-        ip = pref.getString("serverip", "");
+        ip = pref.getString("serverip", ""  );
         port = Integer.parseInt(pref.getString("serverport", ""));
         initPermission();
+        new Thread(playvideo).start();
+
         asr = EventManagerFactory.create(this, "asr");
+
         EventListener myListener = new EventListener() {
             @Override
             public void onEvent(String name, String params, byte[] data, int offset, int length) {
@@ -168,7 +179,6 @@ public class MainActivity extends ActivityMiniRecog {
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
-                        //testT();
                         startRecognize();
                         break;
                     case MotionEvent.ACTION_UP:
@@ -193,9 +203,30 @@ public class MainActivity extends ActivityMiniRecog {
         }
     };
 
-    private void testT () {
-        Toast.makeText(this, "haha", Toast.LENGTH_LONG).show();
-    }
+    Runnable videoconnect = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                videosocket = new Socket(ip, port);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    };
+
+    Runnable playvideo = new Runnable() {
+        @Override
+        public void run() {
+            try {
+                Socket videosocket = new Socket(ip, port);
+                while (true) {
+                    showVideo(videosocket);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+         }
+    };
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -224,6 +255,39 @@ public class MainActivity extends ActivityMiniRecog {
                 _resultText.setText(mySocket.getResponse(mycmd, socket));
             }
         }).start();
+    }
+
+    private void showVideo(Socket videosocket) {
+        try {
+                            String xi = "/getvideo";
+                            OutputStream outputStream = videosocket.getOutputStream();
+                            outputStream.write(xi.getBytes("utf-8"));
+                            outputStream.flush();
+                            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(videosocket.getInputStream()));
+                            String picLenString = bufferedReader.readLine();
+                            int getPicLen = Integer.valueOf(picLenString);
+                            outputStream = videosocket.getOutputStream();
+                            String string = "1";
+                            outputStream.write(string.getBytes());
+                            outputStream.flush();
+                            InputStream inputStream = videosocket.getInputStream();
+                            int offset = 0;
+                            byte[] bitmapBuff = new byte[getPicLen];
+                            while(offset < getPicLen)
+                            {
+                                int len = inputStream.read(bitmapBuff, offset, getPicLen-offset);
+                                offset+=len;
+                            }
+                            bitmap = BitmapFactory.decodeByteArray(bitmapBuff, 0, offset);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            _video.setImageBitmap(bitmap);
+                        }
+                    });
     }
 
     private void startRecognize() {
@@ -294,7 +358,6 @@ public class MainActivity extends ActivityMiniRecog {
                     alarmStatus = hardwareControl.alarmOff(_alarmSwitch, socket);
                 } else {
                     alarmStatus = hardwareControl.alarmOn(_alarmSwitch, socket);
-                    //hardwareControl.getInfo(_resultText, socket);
                 }
                 break;
             case R.id.hum:
@@ -321,6 +384,7 @@ public class MainActivity extends ActivityMiniRecog {
                 mySocket.getResponse("byebye.", socket);
                 try {
                     socket.close();
+                    videosocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -332,6 +396,7 @@ public class MainActivity extends ActivityMiniRecog {
     protected void onResume() {
         super.onResume();
         new Thread(connect).start();
+        new Thread(videoconnect).start();
         Toast.makeText(this, "reconnected socket!", Toast.LENGTH_LONG).show();
     }
 
@@ -349,6 +414,7 @@ public class MainActivity extends ActivityMiniRecog {
                 mySocket.getResponse("byebye.", socket);
                 try {
                     socket.close();
+                    videosocket.close();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
